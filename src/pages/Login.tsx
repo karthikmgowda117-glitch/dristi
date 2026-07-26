@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ShieldCheck, Globe, ArrowRight, Loader2, Lock, UserCheck, ShieldAlert } from "lucide-react";
+import { ShieldCheck, Globe, ArrowRight, Loader2, Lock, UserCheck, ShieldAlert, KeyRound } from "lucide-react";
 import { HoloAmbient } from "@/components/three/HoloAmbient";
 import { GlassPanel, Button, Badge } from "@/components/ui/Primitives";
 import { useNavigate } from "react-router-dom";
@@ -11,21 +11,34 @@ type Stage = "credentials" | "mfa" | "loading";
 export default function Login() {
   const users = getStoredUsers();
   const [selectedUser, setSelectedUser] = useState<PoliceUser>(users[0]); // Default DSP
-  const [password, setPassword] = useState("password123");
+  const [password, setPassword] = useState("");
   const [stage, setStage] = useState<Stage>("credentials");
   const [error, setError] = useState<string | null>(null);
-  const [otp, setOtp] = useState("123456");
+  const [otp, setOtp] = useState("");
   const [attempts, setAttempts] = useState(0);
   const navigate = useNavigate();
 
   function handleSelectUser(u: PoliceUser) {
     setSelectedUser(u);
+    setPassword(""); // Clear password field on officer select
     setError(null);
   }
 
   async function submitCredentials(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+
+    if (!password.trim()) {
+      setError("Please enter your official security password to proceed.");
+      return;
+    }
+
+    // Validate security password (Demo passcodes: 1234, password123, drishti)
+    const validPasscodes = ["1234", "password123", "drishti", "admin", "123456"];
+    if (!validPasscodes.includes(password.trim())) {
+      setError("INVALID SECURITY PASSCODE: Incorrect password. (Demo Officer Passcode: 1234)");
+      return;
+    }
 
     // Check if account is suspended by DSP
     const latestUsers = getStoredUsers();
@@ -42,9 +55,9 @@ export default function Login() {
 
   async function submitOtp(e: React.FormEvent) {
     e.preventDefault();
-    if (otp !== "123456") {
+    if (!otp.trim() || (otp !== "123456" && otp !== "1234")) {
       setAttempts((a) => a + 1);
-      setError(attempts >= 4 ? "Account locked. Contact your Admin to reset." : "Incorrect code. Try 123456.");
+      setError(attempts >= 4 ? "Account locked. Contact your Admin to reset." : "Incorrect 2FA code. (Demo 2FA OTP: 123456)");
       return;
     }
     setStage("loading");
@@ -71,10 +84,11 @@ export default function Login() {
         </div>
 
         <GlassPanel className="p-6 space-y-5">
-          {/* Police Hierarchy Quick Selector */}
+          {/* Police Hierarchy Selector */}
           <div>
-            <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted">
-              Select Officer Login Profile
+            <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted flex items-center justify-between">
+              <span>Select Officer Login Profile</span>
+              <span className="text-[10px] text-primary font-mono lowercase">demo pin: 1234</span>
             </label>
             <div className="grid gap-2 sm:grid-cols-2">
               {users.map((u) => {
@@ -87,7 +101,7 @@ export default function Login() {
                     onClick={() => handleSelectUser(u)}
                     className={`flex items-center gap-3 rounded-xl border p-2.5 text-left transition-all ${
                       isSelected
-                        ? "border-primary bg-primary/10 shadow-sm"
+                        ? "border-primary bg-primary/10 shadow-sm ring-1 ring-primary/40"
                         : "border-line bg-white/60 hover:bg-white"
                     }`}
                   >
@@ -132,19 +146,23 @@ export default function Login() {
                   </Badge>
                 </div>
 
-                <Field label="Password">
-                  <input
-                    required
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    type="password"
-                    placeholder="••••••••••"
-                    className="input"
-                  />
+                <Field label="Officer Security Password / Passcode">
+                  <div className="relative">
+                    <input
+                      required
+                      autoFocus
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      type="password"
+                      placeholder="Enter passcode (Demo PIN: 1234)"
+                      className="input pl-9"
+                    />
+                    <KeyRound size={16} className="absolute left-3 top-3 text-muted pointer-events-none" />
+                  </div>
                 </Field>
 
                 {error && (
-                  <div className="flex items-start gap-2 rounded-lg bg-danger/10 border border-danger/20 p-3 text-xs text-danger">
+                  <div className="flex items-start gap-2 rounded-lg bg-danger/10 border border-danger/20 p-3 text-xs text-danger font-mono">
                     <ShieldAlert size={16} className="mt-0.5 shrink-0" />
                     <span>{error}</span>
                   </div>
@@ -168,7 +186,7 @@ export default function Login() {
                 <div className="text-center">
                   <p className="text-sm font-semibold text-ink">Two-Factor Authentication (2FA)</p>
                   <p className="text-xs text-muted mt-0.5">
-                    Security verification code sent to {selectedUser.name}'s official terminal. (Demo code: 123456)
+                    Security verification code sent to {selectedUser.name}'s official terminal. (Demo OTP: 123456)
                   </p>
                 </div>
 
@@ -177,7 +195,7 @@ export default function Login() {
                   value={otp}
                   onChange={(e) => setOtp(e.target.value)}
                   maxLength={6}
-                  placeholder="000000"
+                  placeholder="123456"
                   className="input text-center font-mono text-xl tracking-[0.5em] py-3"
                 />
 
