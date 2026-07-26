@@ -13,7 +13,7 @@
 
 ## 2. Core System Architecture & Police Hierarchy
 
-### 2.1 Multi-Tier Police Role-Based Access Control (RBAC)
+### 2.1 Multi-Tier Police Role-Based Access Control (RBAC) & FIR Filing Rules
 
 The application enforces a strict hierarchical security model reflecting actual Karnataka State Police ranks:
 
@@ -38,39 +38,40 @@ The application enforces a strict hierarchical security model reflecting actual 
                          └───────────────────────────┘
 ```
 
-| Police Rank | Officer Role | Station Scope | Permissions & Capabilities |
+| Police Rank | Officer Role | Station Scope | FIR Filing & System Permissions |
 | :--- | :--- | :--- | :--- |
-| **DSP** | Superintendent of Police | Range-Wide (All Stations) | **Root Head Access**: Full oversight across all 5+ stations, complete account activation & suspension control over Inspectors, SIs, and Constables. Range-wide caseload access. |
-| **Inspector** | Station House Officer (SHO) | Station Level (e.g. Whitefield PS) | Station administration, station caseload assignment, SHO review approval, team management. |
-| **Sub-Inspector** | Investigating Officer (IO) | Assigned Station & Cases | Case investigation, evidence uploading, narrative querying, FIR summary generation. |
-| **Constable** | Field / Beat Officer | Assigned Station | Field data entry, beat surveillance reporting, status updates. |
+| **DSP** | Superintendent of Police | Range-Wide (All Stations) | **Root Access**: Authorized to file FIRs across all stations. Full oversight across all 5+ stations, complete account activation & suspension control over Inspectors, SIs, and Constables. |
+| **Inspector** | Station House Officer (SHO) | Station Level (e.g. Whitefield PS) | **Authorized to file FIRs**. Receives automated case details notification whenever a Sub-Inspector or DSP registers an FIR. Manages station caseload assignments. |
+| **Sub-Inspector** | Investigating Officer (IO) | Assigned Station & Cases | **Authorized to file FIRs**. Registering an FIR automatically generates a new FIR number and dispatches full case details to Station Inspector Vijay Kumar (SHO) for formal review. |
+| **Constable** | Field / Beat Officer | Assigned Station | **RESTRICTED from filing FIRs**: Asking Drishti AI to file an FIR returns `ACTION DENIED: Constables are not authorized to file formal FIRs under CrPC Sec 154 / BNS Sec 173`. Incident notes are automatically routed to the Inspector. |
 
 ---
 
 ## 3. Detailed Feature Breakdown & Functionality
 
-### 3.1 Dual-Language Speech Synthesis & Kannada (ಕನ್ನಡ) Voice Engine
+### 3.1 FIR Filing & Automated Inspector Dispatch Workflow (`/jarvis`)
+- **Rank Permission Verification**: Drishti AI inspects `currentUser.rank` when a prompt contains `"file FIR"` or `"register FIR"`.
+- **Authorized Filing (SI / Inspector / DSP)**:
+  - Generates a new FIR number (e.g. `KA-WF-2026-0428`).
+  - Automatically dispatches full case details (Category, Complainant, Filing Officer, Narrative) to **Station Inspector Vijay Kumar (SHO)** for review.
+  - Confirms to the officer in English & Kannada out loud via speech synthesis.
+- **Constable Restricted Action**:
+  - Displays: `"ACTION DENIED: Constables are not authorized to file formal FIRs under CrPC Sec 154 / BNS Sec 173. Forwarded draft notes to Inspector."`
+
+---
+
+### 3.2 Dual-Language Speech Synthesis & Kannada (ಕನ್ನಡ) Voice Engine
 - **Website Language Switcher**: Integrated in the top navigation header (`TopBar.tsx`), allowing 1-click toggling between **English** and **ಕನ್ನಡ (Kannada)** across all navigation menus, badges, headers, and UI widgets.
 - **Bilingual Drishti AI Voice Output (TTS)**:
   - Supports dual language SpeechSynthesis output (`en-IN` and `kn-IN`).
   - **Dual Replay Controls**: Every message in the conversation log renders dedicated **[ EN ]** and **[ 🔊 ಕನ್ನಡ (Voice) ]** audio playback buttons.
-  - Clicking **[ 🔊 ಕನ್ನಡ (Voice) ]** speaks the exact Kannada translation out loud using `kn-IN` speech synthesis.
 
 ---
 
-### 3.2 Biometric Facial Recognition & Suspect Search (`/search` - Face Tab)
+### 3.3 Biometric Facial Recognition & Suspect Search (`/search` - Face Tab)
 - **Photo Upload Engine**: Drag-and-drop or click-to-upload custom suspect photos (JPG, PNG, WEBP).
 - **512D Vector Embedding Extraction**: Overlays an animated 68-point facial landmark mesh & bounding box scanner over the uploaded image.
-- **Suspect Lineup Index Match**: Compares facial vectors against `suspectDatabase`.
 - **Match Results Card**: Displays suspect photo, alias, confidence match score, linked FIR, station, and criminal history.
-- **Export Match Report**: 1-click **Export Match Report (.CSV)** button downloads biometric suspect matches directly to the investigator's drive.
-
----
-
-### 3.3 Drishti AI Voice Command & Mode Switcher (`/jarvis`)
-- **Real-Time Microphone Recognition**: Powered by the Web Speech API (`SpeechRecognition`). Captures live microphone audio in English (`en-IN`) and Kannada (`kn-IN`).
-- **Interactive Holographic Arc Reactor Core**: Visualizer rings rotate and pulsate in real-time response to voice speech input and audio output.
-- **Dynamic Mode Switcher**: Command Center, FIR Copilot Assistant, and Tactical Tools Suite.
 
 ---
 

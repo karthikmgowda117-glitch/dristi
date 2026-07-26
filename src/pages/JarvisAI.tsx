@@ -12,6 +12,7 @@ import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
 import { useTextToSpeech } from "@/hooks/useTextToSpeech";
 import { downloadFile, exportToCSV } from "@/utils/exportHelper";
 import { useLanguage, translations } from "@/services/languageStore";
+import { getCurrentUser } from "@/services/authStore";
 
 interface Message {
   id: string;
@@ -29,6 +30,7 @@ export default function JarvisAI() {
   const [globalLang, setGlobalLang] = useLanguage();
   const [aiLang, setAiLang] = useState<"en" | "kn">(globalLang);
   const t = translations[aiLang];
+  const currentUser = getCurrentUser();
 
   const INITIAL_MESSAGES: Message[] = [
     {
@@ -65,6 +67,13 @@ export default function JarvisAI() {
 
   const COMMAND_SHORTCUTS = [
     {
+      label: aiLang === "kn" ? "ಎಫ್.ಐ.ಆರ್ ದಾಖಲಿಸಿ (SI/Inspector)" : "File FIR for Incident (SI/Inspector)",
+      query:
+        aiLang === "kn"
+          ? "ವೈಟ್‌ಫೀಲ್ಡ್ ಮುಖ್ಯ ರಸ್ತೆಯ ಚೈನ್ ಸ್ನಾಚಿಂಗ್ ಘಟನೆಗೆ ಎಫ್.ಐ.ಆರ್ ದಾಖಲಿಸಿ, ದೂರುದಾರರು ಅನಿತಾ ಕೆ"
+          : "Drishti, file an FIR for chain snatching incident near Whitefield main road, complainant Anitha K",
+    },
+    {
       label: aiLang === "kn" ? "ಸುರೇಶ್ ಎಂ ಲಿಂಕ್ ಪತ್ತೆ ಹಚ್ಚಿ" : "Search Co-Accused Links",
       query:
         aiLang === "kn"
@@ -91,13 +100,6 @@ export default function JarvisAI() {
         aiLang === "kn"
           ? "ವೈಟ್‌ಫೀಲ್ಡ್ ಠಾಣೆಯ ಚೈನ್‌ ಸ್ನಾಚಿಂಗ್‌ ಅಪರಾಧ ಹೆಚ್ಚಳದ Z-score ಪರಿಶೀಲಿಸಿ"
           : "Run 90-day Z-score anomaly check for chain snatching reports in Whitefield station",
-    },
-    {
-      label: aiLang === "kn" ? "ಕ್ಯೂ.ಆರ್ ಕೋಡ್ ರಚಿಸಿ" : "Generate Secure Case QR",
-      query:
-        aiLang === "kn"
-          ? "ಪ್ರಕರಣ KA-WF-2026-0417 ಗೆ ಭದ್ರತಾ ಕ್ಯೂ.ಆರ್ ಕೋಡ್ ಸೃಷ್ಟಿಸಿ"
-          : "Generate secure verification QR code for case KA-WF-2026-0417",
     },
   ];
 
@@ -182,10 +184,29 @@ export default function JarvisAI() {
 
       const lower = textToSend.toLowerCase();
 
-      if (lower.includes("suresh") || textToSend.includes("ಸುರೇಶ್") || textToSend.includes("ಸಹ-ಆರೋಪಿ")) {
+      // Check if user is requesting to File an FIR
+      const isFilingFir =
+        lower.includes("file fir") ||
+        lower.includes("register fir") ||
+        lower.includes("file an fir") ||
+        textToSend.includes("ಎಫ್.ಐ.ಆರ್") ||
+        textToSend.includes("ದಾಖಲಿಸಿ");
+
+      if (isFilingFir) {
+        if (currentUser.rank === "Constable") {
+          // Constable is RESTRICTED from filing FIR
+          responseText = `ACTION DENIED: Constables are not authorized to file formal FIRs under CrPC Sec 154 / BNS Sec 173. Only Sub-Inspectors (IO), Inspectors (SHO), or DSPs may register official FIRs.\n\nIncident notes have been drafted & dispatched to Station Inspector Vijay Kumar (SHO) for formal review & IO assignment.`;
+          responseKnText = `ಕ್ರಿಯೆಯನ್ನು ತಡೆಯಲಾಗಿದೆ: ಸಿಆರ್‌ಪಿಸಿ 154 / ಬಿಎನ್‌ಎಸ್ 173 ರ ಅಡಿಯಲ್ಲಿ ಕಾನ್‌ಸ್ಟೇಬಲ್‌ಗಳಿಗೆ ಅಧಿಕೃತ ಎಫ್.ಐ.ಆರ್ ದಾಖಲಿಸಲು ಅಧಿಕಾರವಿರುವುದಿಲ್ಲ. ಉಪನಿರೀಕ್ಷಕರು (SI), ನಿರೀಕ್ಷಕರು (Inspector SHO) ಅಥವಾ ಡಿಎಸ್‌ಪಿ ಮಾತ್ರ ಎಫ್.ಐ.ಆರ್ ದಾಖಲಿಸಬಹುದು.\n\nನಿಮ್ಮ ಘಟನಾ ವರದಿಯನ್ನು ವೈಟ್‌ಫೀಲ್ಡ್ ಪೊಲೀಸ್ ಇನ್‌ಸ್ಪೆಕ್ಟರ್ ವಿಜಯ್ ಕುಮಾರ್ (SHO) ಅವರ ಪರಿಶೀಲನೆಗೆ ರವಾನಿಸಲಾಗಿದೆ.`;
+        } else {
+          // Authorized rank: Sub-Inspector, Inspector, DSP
+          const newFirId = `KA-WF-2026-04${Math.floor(Math.random() * 80 + 20)}`;
+          responseText = `FIR REGISTERED SUCCESSFULLY: FIR No. ${newFirId}.\nCategory: Chain Snatching / Robbery.\nComplainant: Anitha K.\nFiling Officer: ${currentUser.name} (${currentUser.rank}).\nStatus: REGISTERED · SHO REVIEW DISPATCHED.\n\nAutomated Alert: Full case details & narrative summary dispatched to Station Inspector Vijay Kumar (SHO) for formal review & IO assignment.`;
+          responseKnText = `ಎಫ್.ಐ.ಆರ್ ಯಶಸ್ವಿಯಾಗಿ ದಾಖಲಾಗಿದೆ: ಎಫ್.ಐ.ಆರ್ ಸಂಖ್ಯೆ ${newFirId}.\nವರ್ಗ: ಚೈನ್ ಸ್ನಾಚಿಂಗ್.\nದೂರುದಾರರು: ಅನಿತಾ ಕೆ.\nದಾಖಲಿಸಿದ ಅಧಿಕಾರಿ: ${currentUser.name} (${currentUser.rank}).\nಸ್ಥಿತಿ: ದಾಖಲಾಗಿದೆ · ಎಸ್‌ಎಚ್‌ಒ ಪರಿಶೀಲನೆಗೆ ಕಳುಹಿಸಲಾಗಿದೆ.\n\nಸ್ವಯಂಚಾಲಿತ ಸೂಚನೆ: ಪ್ರಕರಣದ ಸಂಪೂರ್ಣ ವಿವರಗಳನ್ನು ವೈಟ್‌ಫೀಲ್ಡ್ ಪೊಲೀಸ್ ಇನ್‌ಸ್ಪೆಕ್ಟರ್ ವಿಜಯ್ ಕುಮಾರ್ (SHO) ಅವರಿಗೆ ಪರಿಶೀಲನೆಗಾಗಿ ರವಾನಿಸಲಾಗಿದೆ.`;
+        }
+      } else if (lower.includes("suresh") || textToSend.includes("ಸುರೇಶ್") || textToSend.includes("ಸಹ-ಆರೋಪಿ")) {
         responseText = "Graph Traversal Result: Suspect Suresh M. is connected via shared contact number to Manjunath S., named in K.R. Puram case KA-KR-2026-0398. Confidence score: 82 percent.";
         responseKnText = "ಗ್ರಾಫ್ ವಿಶ್ಲೇಷಣೆ ಫಲಿತಾಂಶ: ಆರೋಪಿ ಸುರೇಶ್ ಎಂ. ಮತ್ತು ಕೆ.ಆರ್. ಪುರಂ ಪ್ರಕರಣ KA-KR-2026-0398 ರಲ್ಲಿ ಹೆಸರಿಸಲಾದ ಮಂಜುನಾಥ್ ಎಸ್. ಇಬ್ಬರೂ ಒಂದೇ ಫೋನ್ ಸಂಖ್ಯೆ ಸಂಪರ್ಕ ಹೊಂದಿದ್ದಾರೆ. ವಿಶ್ವಾಸಾರ್ಹತೆ: 82 ಶೇಕಡಾ.";
-      } else if (lower.includes("fir") || lower.includes("summarize") || textToSend.includes("ಸಾರಾಂಶ") || textToSend.includes("ಎಫ್.ಐ.ಆರ್")) {
+      } else if (lower.includes("fir") || lower.includes("summarize") || textToSend.includes("ಸಾರಾಂಶ")) {
         responseText = "FIR Legal Analysis for KA-WF-2026-0417. Category: Chain Snatching at Whitefield Station. Complainant: Anitha K. Applicable BNS Statutes: Section 304 Snatching, and Section 317 Stolen Property. Completeness score: 88 percent.";
         responseKnText = "ಪ್ರಕರಣ KA-WF-2026-0417 ರ ಕಾನೂನು ವಿಶ್ಲೇಷಣೆ: ವೈಟ್‌ಫೀಲ್ಡ್ ಠಾಣೆಯ ಚೈನ್ ಸ್ನಾಚಿಂಗ್ ಪ್ರಕರಣ. ದೂರುದಾರರು: ಅನಿತಾ ಕೆ. ಅನ್ವಯವಾಗುವ ಬಿಎನ್ಎಸ್ ಕಾಯಿದೆಗಳು: ಸೆಕ್ಷನ್ 304 (ಸ್ನಾಚಿಂಗ್), ಮತ್ತು ಸೆಕ್ಷನ್ 317 (ಕಳವು ಮಾಲು). ಪರಿಪೂರ್ಣತೆ: 88 ಶೇಕಡಾ.";
       } else if (lower.includes("qr") || lower.includes("code") || textToSend.includes("ಕ್ಯೂ.ಆರ್")) {
@@ -354,15 +375,26 @@ Verified by Drishti Dual-AI Copilot Engine`;
       <div className="relative z-10 grid grid-cols-1 gap-6 p-6 lg:grid-cols-12">
         {/* Left Column: System Telemetry & AI Config (Cols 3) */}
         <div className="space-y-5 lg:col-span-3">
-          {/* Greeting Box */}
+          {/* Active Officer Status Box */}
           <div className="rounded-xl border border-cyan-500/30 bg-black/40 p-4 shadow-[0_0_20px_rgba(0,170,255,0.05)]">
-            <p className="text-xs uppercase tracking-wider text-cyan-400/70 font-mono">Officer Interface</p>
+            <div className="flex items-center justify-between">
+              <p className="text-xs uppercase tracking-wider text-cyan-400/70 font-mono">Officer Logged In</p>
+              <Badge tone={currentUser.rank === "DSP" ? "accent" : currentUser.rank === "Constable" ? "danger" : "info"}>
+                {currentUser.rank}
+              </Badge>
+            </div>
             <p className="mt-1 text-base font-semibold text-white drop-shadow-[0_0_6px_rgba(255,255,255,0.5)]">
-              Welcome Sir / IO Ramesh K.
+              {currentUser.name}
             </p>
             <p className="mt-1 text-xs text-cyan-200/60">
-              Whitefield PS · Jurisdiction Scope Enforced
+              {currentUser.station} · {currentUser.roleTitle}
             </p>
+
+            {currentUser.rank === "Constable" && (
+              <div className="mt-2.5 rounded border border-rose-500/40 bg-rose-500/10 p-2 text-[10px] text-rose-300 font-mono">
+                ⚠️ FIR filing restricted for Constables. Incident notes automatically routed to Inspector.
+              </div>
+            )}
           </div>
 
           {/* System Telemetry Meters */}
@@ -398,9 +430,9 @@ Verified by Drishti Dual-AI Copilot Engine`;
               </span>
             </div>
             <div className="space-y-1.5 text-xs font-mono text-cyan-200/80">
-              <div className="flex justify-between"><span>Speech Mode:</span> <span className="text-cyan-400 font-bold">{aiLang === "kn" ? "ಕನ್ನಡ (kn-IN)" : "English (en-IN)"}</span></div>
+              <div className="flex justify-between"><span>FIR Filing Rule:</span> <span className={currentUser.rank === "Constable" ? "text-amber-400 font-bold" : "text-emerald-400 font-bold"}>{currentUser.rank === "Constable" ? "Restricted (Forward)" : "Authorized"}</span></div>
               <div className="flex justify-between"><span>Voice Synthesizer:</span> <span className={audioEnabled ? "text-emerald-400 font-bold" : "text-gray-400"}>{audioEnabled ? "ACTIVE (TTS)" : "MUTED"}</span></div>
-              <div className="flex justify-between"><span>Bilingual Speech:</span> <span className="text-emerald-400 font-bold">EN + KN Dual</span></div>
+              <div className="flex justify-between"><span>SHO Dispatch:</span> <span className="text-cyan-400 font-bold">Inspector Vijay Kumar</span></div>
             </div>
           </div>
         </div>
@@ -514,11 +546,11 @@ Verified by Drishti Dual-AI Copilot Engine`;
             <div className="flex items-center gap-2">
               <button
                 onClick={() =>
-                  simulateSpeech("Drishti, search co-accused graph links for Suresh M in Whitefield PS")
+                  simulateSpeech("Drishti, file an FIR for chain snatching incident near Whitefield main road, complainant Anitha K")
                 }
-                className="text-[11px] font-mono text-cyan-400/70 hover:text-cyan-200 underline"
+                className="text-[11px] font-mono text-cyan-400/80 hover:text-cyan-200 underline font-bold"
               >
-                🔊 Demo Speech (English)
+                📝 File FIR (SI/Inspector Rule)
               </button>
               <span className="text-cyan-500/40">|</span>
               <button
@@ -527,7 +559,7 @@ Verified by Drishti Dual-AI Copilot Engine`;
                 }
                 className="text-[11px] font-mono text-emerald-400 hover:text-emerald-300 underline font-bold"
               >
-                🔊 ಡೆಮೊ ಧ್ವನಿ (ಕನ್ನಡದಲ್ಲಿ ಕೇಳಿ)
+                🔊 ಡೆಮೊ ಧ್ವನಿ (ಕನ್ನಡ)
               </button>
             </div>
           </div>
@@ -569,7 +601,7 @@ Verified by Drishti Dual-AI Copilot Engine`;
                       >
                         <div className="mb-1 flex items-center justify-between gap-2 border-b border-cyan-500/20 pb-1 text-[10px]">
                           <span className={m.sender === "user" ? "text-cyan-300 font-bold" : "text-cyan-400 font-bold"}>
-                            {m.sender === "user" ? "OFFICER" : "DRISHTI AI"}
+                            {m.sender === "user" ? `OFFICER (${currentUser.rank})` : "DRISHTI AI"}
                           </span>
                           <div className="flex items-center gap-2">
                             {m.sender === "drishti" && (
