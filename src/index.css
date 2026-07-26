@@ -1,0 +1,77 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body, #root { height: 100%; }
+
+body {
+  background:
+    radial-gradient(1200px 600px at 15% -10%, rgba(37,99,235,0.06), transparent 60%),
+    radial-gradient(1000px 500px at 100% 0%, rgba(6,182,212,0.05), transparent 55%),
+    #FAFBFC;
+}
+
+::selection { background: rgba(37,99,235,0.15); }
+
+/* Scrollbars — thin, quiet, command-center appropriate */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(17,24,39,0.14); border-radius: 8px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(17,24,39,0.24); }
+
+/* Focus visibility — WCAG 2.1 AA, never removed */
+:focus-visible {
+  outline: 2px solid #2563EB;
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+@layer components {
+  .glass-panel {
+    background: rgba(255,255,255,0.55);
+    backdrop-filter: blur(16px) saturate(160%);
+    -webkit-backdrop-filter: blur(16px) saturate(160%);
+    border: 1px solid rgba(255,255,255,0.25);
+    box-shadow: 0 8px 32px rgba(17,24,39,0.06), 0 1px 0 rgba(255,255,255,0.6) inset;
+  }
+
+  .surface-card {
+    background: #FFFFFF;
+    border: 1px solid #E5E9F0;
+    box-shadow: 0 1px 2px rgba(17,24,39,0.04);
+  }
+
+  /* The Trace Seam — signature explainability affordance (see DESIGN_SYSTEM.md §7) */
+  .trace-seam {
+    position: relative;
+    isolation: isolate;
+  }
+  .trace-seam::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 2px;
+    border-radius: 999px 999px 0 0;
+    background: linear-gradient(90deg, #06B6D4, rgba(6,182,212,0.15) 65%, transparent);
+    opacity: 0.35;
+    transition: opacity 180ms ease;
+  }
+  .trace-seam:hover::before,
+  .trace-seam:focus-within::before {
+    opacity: 1;
+  }
+
+  .skeleton {
+    background: linear-gradient(90deg, #EEF1F5 0%, #F7F9FB 50%, #EEF1F5 100%);
+    background-size: 800px 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "declaration": true,
+    "removeComments": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "allowSyntheticDefaultImports": true,
+    "target": "ES2021",
+    "sourceMap": true,
+    "outDir": "./dist",
+    "baseUrl": "./",
+    "incremental": true,
+    "skipLibCheck": true,
+    "strictNullChecks": false,
+    "noImplicitAny": false,
+    "strictBindCallApply": false,
+    "forceConsistentCasingInFileNames": false,
+    "noFallthroughCasesInSwitch": false,
+    "paths": {
+      "@drishti/common": ["libs/common/src"],
+      "@drishti/common/*": ["libs/common/src/*"],
+      "@drishti/auth-guard": ["libs/auth-guard/src"],
+      "@drishti/auth-guard/*": ["libs/auth-guard/src/*"],
+      "@drishti/db": ["libs/db/src"],
+      "@drishti/db/*": ["libs/db/src/*"],
+      "@drishti/event-bus": ["libs/event-bus/src"],
+      "@drishti/event-bus/*": ["libs/event-bus/src/*"]
+    }
+  }
+}

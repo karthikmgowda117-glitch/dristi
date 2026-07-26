@@ -1,0 +1,121 @@
+{
+  "collection": "@nestjs/schematics",
+  "sourceRoot": "src",
+  "monorepo": true,
+  "root": "apps/auth-service",
+  "entryFile": "main",
+  "projects": {
+    "auth-service": {
+      "type": "application",
+      "root": "apps/auth-service",
+      "entryFile": "main",
+      "sourceRoot": "apps/auth-service/src",
+      "compilerOptions": { "tsConfigPath": "apps/auth-service/tsconfig.app.json" }
+    },
+    "case-service": {
+      "type": "application",
+      "root": "apps/case-service",
+      "entryFile": "main",
+      "sourceRoot": "apps/case-service/src",
+      "compilerOptions": { "tsConfigPath": "apps/case-service/tsconfig.app.json" }
+    },
+    "people-service": {
+      "type": "application",
+      "root": "apps/people-service",
+      "entryFile": "main",
+      "sourceRoot": "apps/people-service/src",
+      "compilerOptions": { "tsConfigPath": "apps/people-service/tsconfig.app.json" }
+    },
+    "unit-service": {
+      "type": "application",
+      "root": "apps/unit-service",
+      "entryFile": "main",
+      "sourceRoot": "apps/unit-service/src",
+      "compilerOptions": { "tsConfigPath": "apps/unit-service/tsconfig.app.json" }
+    },
+    "evidence-service": {
+      "type": "application",
+      "root": "apps/evidence-service",
+      "entryFile": "main",
+      "sourceRoot": "apps/evidence-service/src",
+      "compilerOptions": { "tsConfigPath": "apps/evidence-service/tsconfig.app.json" }
+    },
+    "alert-service": {
+      "type": "application",
+      "root": "apps/alert-service",
+      "entryFile": "main",
+      "sourceRoot": "apps/alert-service/src",
+      "compilerOptions": { "tsConfigPath": "apps/alert-service/tsconfig.app.json" }
+    },
+    "audit-service": {
+      "type": "application",
+      "root": "apps/audit-service",
+      "entryFile": "main",
+      "sourceRoot": "apps/audit-service/src",
+      "compilerOptions": { "tsConfigPath": "apps/audit-service/tsconfig.app.json" }
+    },
+    "task-service": {
+      "type": "application",
+      "root": "apps/task-service",
+      "entryFile": "main",
+      "sourceRoot": "apps/task-service/src",
+      "compilerOptions": { "tsConfigPath": "apps/task-service/tsconfig.app.json" }
+    },
+    "digest-service": {
+      "type": "application",
+      "root": "apps/digest-service",
+      "entryFile": "main",
+      "sourceRoot": "apps/digest-service/src",
+      "compilerOptions": { "tsConfigPath": "apps/digest-service/tsconfig.app.json" }
+    },
+    "admin-service": {
+      "type": "application",
+      "root": "apps/admin-service",
+      "entryFile": "main",
+      "sourceRoot": "apps/admin-service/src",
+      "compilerOptions": { "tsConfigPath": "apps/admin-service/tsconfig.app.json" }
+    },
+    "performance-service": {
+      "type": "application",
+      "root": "apps/performance-service",
+      "entryFile": "main",
+      "sourceRoot": "apps/performance-service/src",
+      "compilerOptions": { "tsConfigPath": "apps/performance-service/tsconfig.app.json" }
+    },
+    "report-service": {
+      "type": "application",
+      "root": "apps/report-service",
+      "entryFile": "main",
+      "sourceRoot": "apps/report-service/src",
+      "compilerOptions": { "tsConfigPath": "apps/report-service/tsconfig.app.json" }
+    },
+    "common": {
+      "type": "library",
+      "root": "libs/common",
+      "entryFile": "index",
+      "sourceRoot": "libs/common/src",
+      "compilerOptions": { "tsConfigPath": "libs/common/tsconfig.lib.json" }
+    },
+    "auth-guard": {
+      "type": "library",
+      "root": "libs/auth-guard",
+      "entryFile": "index",
+      "sourceRoot": "libs/auth-guard/src",
+      "compilerOptions": { "tsConfigPath": "libs/auth-guard/tsconfig.lib.json" }
+    },
+    "db": {
+      "type": "library",
+      "root": "libs/db",
+      "entryFile": "index",
+      "sourceRoot": "libs/db/src",
+      "compilerOptions": { "tsConfigPath": "libs/db/tsconfig.lib.json" }
+    },
+    "event-bus": {
+      "type": "library",
+      "root": "libs/event-bus",
+      "entryFile": "index",
+      "sourceRoot": "libs/event-bus/src",
+      "compilerOptions": { "tsConfigPath": "libs/event-bus/tsconfig.lib.json" }
+    }
+  }
+}

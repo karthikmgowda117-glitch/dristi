@@ -1,0 +1,13 @@
+FROM python:3.11-slim
+WORKDIR /app
+RUN apt-get update && apt-get install -y --no-install-recommends build-essential gcc libpq-dev && rm -rf /var/lib/apt/lists/*
+RUN pip install --no-cache-dir fastapi uvicorn[standard] pydantic pydantic-settings \
+    asyncpg "sqlalchemy[asyncio]" redis neo4j httpx "python-jose[cryptography]" \
+    python-multipart aiofiles minio numpy scikit-learn statsmodels prophet
+COPY shared/ ./shared/
+ARG SERVICE
+COPY ${SERVICE}/ ./${SERVICE}/
+ENV SERVICE_DIR=${SERVICE}
+EXPOSE 8000
+CMD python -m uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}
+WORKDIR /app/${SERVICE}
