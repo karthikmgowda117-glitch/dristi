@@ -17,7 +17,7 @@ type ReportKey = typeof REPORT_TYPES[number]["key"];
 import { downloadFile } from "@/utils/exportHelper";
 
 export default function Reports() {
-  const [type, setType] = useState<ReportKey | null>(null);
+  const [type, setType] = useState<ReportKey | null>("trend");
   const [generating, setGenerating] = useState(false);
   const [generated, setGenerated] = useState(false);
 

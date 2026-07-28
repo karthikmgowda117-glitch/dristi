@@ -2,18 +2,19 @@ import React, { useState, useRef } from "react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import {
-  GitCompare, ScanFace, Camera, Car, Mic, Search as SearchIcon, Upload, Loader2, ShieldAlert, MicOff, RefreshCw, AlertCircle
+  GitCompare, ScanFace, Camera, Car, Mic, Search as SearchIcon, Upload, Loader2, ShieldAlert, MicOff, RefreshCw, AlertCircle, Radio, Activity, Volume2, CheckCircle2, Play, Square, Download
 } from "lucide-react";
 import { Card, Badge, Button, ConfidenceMeter, ProvenanceTag, TraceGlyph, EmptyState, AlertBanner } from "@/components/ui/Primitives";
 import { ExplainabilityDrawer } from "@/components/ui/ExplainabilityPanel";
 import { faceMatches, cctvMatches, vehicleMatches, similarityTrace, suspectDatabase, SuspectRecord } from "@/data/mock";
 import { aiApi } from "@/services/api";
 import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
-import { exportToCSV } from "@/utils/exportHelper";
+import { exportToCSV, downloadFile } from "@/utils/exportHelper";
 
 const TABS = [
   { key: "case", label: "Case Similarity", icon: GitCompare, synthetic: false },
   { key: "face", label: "Face Similarity", icon: ScanFace, synthetic: true },
+  { key: "voice", label: "Voiceprint Biometrics", icon: Radio, synthetic: true },
   { key: "cctv", label: "CCTV Metadata", icon: Camera, synthetic: true },
   { key: "vehicle", label: "Vehicle Re-ID", icon: Car, synthetic: true },
   { key: "nl", label: "NL / Voice Query", icon: Mic, synthetic: false },
@@ -30,7 +31,7 @@ export default function IntelligenceSearch() {
     <div className="space-y-5">
       <div>
         <h1 className="text-xl font-semibold">Intelligence Search</h1>
-        <p className="text-sm text-muted">Case similarity, biometric face recognition, and cross-modal linkage search</p>
+        <p className="text-sm text-muted">Case similarity, facial recognition, voiceprint acoustic biometrics, and cross-modal linkage search</p>
       </div>
 
       <div className="flex gap-1 overflow-x-auto rounded-xl2 border border-line bg-white p-1">
@@ -56,6 +57,7 @@ export default function IntelligenceSearch() {
 
       {tab === "case" && <CaseSimilaritySearch onTrace={() => setTraceOpen(true)} />}
       {tab === "face" && <FaceSimilaritySearch onTrace={() => setTraceOpen(true)} />}
+      {tab === "voice" && <VoiceprintBiometricsSearch onTrace={() => setTraceOpen(true)} />}
       {tab === "cctv" && <CctvMetadataSearch onTrace={() => setTraceOpen(true)} />}
       {tab === "vehicle" && <VehicleReIdSearch onTrace={() => setTraceOpen(true)} />}
       {tab === "nl" && <NlVoiceQuery onTrace={() => setTraceOpen(true)} />}
@@ -343,6 +345,198 @@ function FaceSimilaritySearch({ onTrace }: { onTrace: () => void }) {
   );
 }
 
+/* ---------------- Voiceprint Biometrics (UNIQUE NEW FEATURE) ---------------- */
+function VoiceprintBiometricsSearch({ onTrace }: { onTrace: () => void }) {
+  const [analyzing, setAnalyzing] = useState(false);
+  const [audioSource, setAudioSource] = useState<string | null>(null);
+  const [voiceprintMatch, setVoiceprintMatch] = useState<boolean>(false);
+
+  function runVoiceprintScan(sampleName: string) {
+    setAnalyzing(true);
+    setVoiceprintMatch(false);
+    setAudioSource(sampleName);
+    setTimeout(() => {
+      setAnalyzing(false);
+      setVoiceprintMatch(true);
+    }, 1600);
+  }
+
+  function handleExportVoiceprint() {
+    const reportText = `PROJECT DRISHTI — ACOUSTIC VOICEPRINT & DIALECT DOSSIER
+Generated: ${new Date().toLocaleString()}
+Target Audio Sample: Wiretap Intercept #KA-2026-AUDIO-88
+
+ACOUSTIC METRICS:
+- Fundamental Pitch (F0): 184.2 Hz (Male Baritone)
+- Formant Frequency F1: 520 Hz | F2: 1480 Hz
+- Kannada Dialect Classification: Bengaluru South-East Dialect (Confidence: 91.4%)
+- Cosine Distance Match Score: 0.942 (94.2% Match)
+
+MATCHED SUSPECT PROFILE:
+- Name: Manjunath S. (Alias: "Blackie Manja")
+- Linked FIR: KA-KR-2026-0398
+- Station Jurisdiction: K.R. Puram Police Station
+- Status: WANTED · ACTIVE WARRANT
+
+Verified by Drishti Acoustic Frequency & Voiceprint Biometric Engine`;
+
+    downloadFile("Drishti_Voiceprint_Report_KA_2026_AUDIO_88.txt", reportText, "text/plain;charset=utf-8;");
+  }
+
+  return (
+    <Card className="space-y-5">
+      <div className="flex items-center justify-between border-b border-line pb-3">
+        <div>
+          <h3 className="text-sm font-semibold text-ink flex items-center gap-2">
+            <Radio size={16} className="text-emerald-500 animate-pulse" /> Acoustic Voiceprint &amp; Spectrum Analyzer
+          </h3>
+          <p className="text-xs text-muted">
+            Analyze pitch frequency ($F_0$), formant resonance ($F_1/F_2$), and Kannada dialect classification against suspect voice database
+          </p>
+        </div>
+        <Badge tone="accent">UNIQUELY DRISHTI AI</Badge>
+      </div>
+
+      {/* Audio Sample Selector & Live Spectrum Visualizer */}
+      <div className="rounded-xl border border-line bg-black/90 p-4 text-white space-y-4">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div>
+            <p className="text-xs font-mono text-cyan-300 font-bold uppercase tracking-wider">
+              Selected Audio Sample: {audioSource || "None Selected"}
+            </p>
+            <p className="text-[11px] text-cyan-100/70 font-mono">
+              Sampling Rate: 44.1 kHz · Bitrate: 320 kbps · Formant Tracker: Active
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => runVoiceprintScan("Wiretap_Intercept_Suresh_M.wav")}
+              className="rounded-lg border border-cyan-400/40 bg-cyan-500/20 px-3 py-1.5 font-mono text-xs text-cyan-300 hover:bg-cyan-500/30 transition flex items-center gap-1.5"
+            >
+              <Play size={13} /> Sample 1 (Suresh M.)
+            </button>
+            <button
+              onClick={() => runVoiceprintScan("Wiretap_Intercept_Manjunath_S.wav")}
+              className="rounded-lg border border-emerald-400/40 bg-emerald-500/20 px-3 py-1.5 font-mono text-xs text-emerald-300 hover:bg-emerald-500/30 transition flex items-center gap-1.5"
+            >
+              <Play size={13} /> Sample 2 (Manjunath S.)
+            </button>
+          </div>
+        </div>
+
+        {/* Dynamic Waveform Spectrum Graphics */}
+        <div className="relative flex h-24 w-full items-center justify-center rounded-lg border border-cyan-500/30 bg-black/60 px-4 overflow-hidden">
+          <div className="flex items-center justify-center gap-1.5 w-full">
+            {[24, 42, 68, 32, 85, 92, 54, 76, 40, 62, 90, 35, 78, 52, 64, 88, 30, 48, 95, 70, 56, 40, 82, 60, 34].map((h, i) => (
+              <div
+                key={i}
+                className={`w-2 rounded-full transition-all duration-300 ${
+                  analyzing ? "bg-cyan-400 animate-pulse shadow-[0_0_12px_#00aaff]" : "bg-cyan-500/60"
+                }`}
+                style={{
+                  height: analyzing ? `${Math.floor(Math.random() * 65 + 15)}px` : `${h * 0.7}px`,
+                }}
+              />
+            ))}
+          </div>
+
+          {analyzing && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/70 backdrop-blur-xs font-mono text-xs text-cyan-300 gap-2">
+              <Loader2 size={16} className="animate-spin text-cyan-400" />
+              Performing 128-Band FFT Spectral Frequency Extraction...
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Voiceprint Result Analysis Cards */}
+      {voiceprintMatch && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-bold uppercase tracking-wider text-ink">
+              Voiceprint Spectrum Analysis Results
+            </p>
+            <Button size="sm" variant="secondary" onClick={handleExportVoiceprint}>
+              <Download size={13} /> Export Voiceprint Dossier (.TXT)
+            </Button>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            {/* Top Match: Manjunath S */}
+            <div className="rounded-xl border border-emerald-500/40 bg-emerald-950/10 p-4 space-y-3 shadow-sm">
+              <div className="flex items-start gap-3">
+                <img
+                  src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150&auto=format&fit=crop&q=80"
+                  alt="Manjunath S."
+                  className="h-14 w-14 rounded-xl object-cover border border-emerald-500/40 shrink-0"
+                />
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center justify-between gap-1">
+                    <p className="text-sm font-bold text-ink">Manjunath S.</p>
+                    <Badge tone="success">94.2% Match</Badge>
+                  </div>
+                  <p className="text-xs font-medium text-emerald-600">Alias: "Blackie Manja"</p>
+                  <p className="text-[11px] text-muted">K.R. Puram PS · FIR KA-KR-2026-0398</p>
+                </div>
+              </div>
+
+              <div className="rounded-lg bg-white p-2 text-xs space-y-1.5 font-mono border border-line">
+                <div className="flex justify-between">
+                  <span className="text-muted">Pitch (F0):</span>
+                  <span className="font-bold text-ink">184.2 Hz (Male Baritone)</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted">Dialect Origin:</span>
+                  <span className="text-emerald-700 font-bold">Kannada (Bengaluru Rural Accent)</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted">Cosine Distance:</span>
+                  <span className="font-bold text-ink">0.942 (Highly Significant)</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Match 2: Suresh M */}
+            <div className="rounded-xl border border-line bg-white p-4 space-y-3 shadow-sm">
+              <div className="flex items-start gap-3">
+                <img
+                  src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80"
+                  alt="Suresh M."
+                  className="h-14 w-14 rounded-xl object-cover border border-line shrink-0"
+                />
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center justify-between gap-1">
+                    <p className="text-sm font-bold text-ink">Suresh M.</p>
+                    <Badge tone="info">82.6% Match</Badge>
+                  </div>
+                  <p className="text-xs font-medium text-primary">Alias: "Snake Suresh"</p>
+                  <p className="text-[11px] text-muted">Whitefield PS · FIR KA-WF-2026-0417</p>
+                </div>
+              </div>
+
+              <div className="rounded-lg bg-bg/60 p-2 text-xs space-y-1.5 font-mono border border-line">
+                <div className="flex justify-between">
+                  <span className="text-muted">Pitch (F0):</span>
+                  <span className="font-bold text-ink">198.5 Hz (Co-Accused Match)</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted">Dialect Origin:</span>
+                  <span className="font-bold text-ink">Kannada (Urban Bengaluru)</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted">Cosine Distance:</span>
+                  <span className="font-bold text-ink">0.826 (Secondary Link)</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </Card>
+  );
+}
+
 /* ---------------- CCTV Metadata ---------------- */
 function CctvMetadataSearch({ onTrace }: { onTrace: () => void }) {
   return (
@@ -573,4 +767,3 @@ function NlVoiceQuery({ onTrace }: { onTrace?: () => void }) {
     </Card>
   );
 }
-

@@ -62,6 +62,8 @@ function createPatrolIcon() {
 export default function LiveMap() {
   const mapRef = useRef<L.Map | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const patrolLayerGroupRef = useRef<L.LayerGroup | null>(null);
+
   const [selected, setSelected] = useState<typeof CRIME_MARKERS[0] | null>(null);
   const [filter, setFilter] = useState<"all" | "critical" | "high" | "medium" | "low">("all");
   const [showPatrol, setShowPatrol] = useState(true);
@@ -96,29 +98,48 @@ export default function LiveMap() {
       `, { maxWidth: 240 });
     });
 
-    // Add patrol unit markers
+    // Create Patrol Layer Group
+    const patrolGroup = L.layerGroup().addTo(map);
+    patrolLayerGroupRef.current = patrolGroup;
+
     PATROL_UNITS.forEach((unit) => {
-      const marker = L.marker([unit.lat, unit.lng], { icon: createPatrolIcon() }).addTo(map);
+      const marker = L.marker([unit.lat, unit.lng], { icon: createPatrolIcon() });
       marker.bindPopup(`
         <div style="font-family:monospace;min-width:160px;">
           <div style="font-weight:700;color:#2979ff;margin-bottom:4px;">${unit.id}</div>
           <div style="font-size:12px;color:#555;">Status: ${unit.status}</div>
         </div>
       `);
+      patrolGroup.addLayer(marker);
     });
 
     return () => {
       map.remove();
       mapRef.current = null;
+      patrolLayerGroupRef.current = null;
     };
   }, []);
+
+  // Sync patrol units checkbox with map layer
+  useEffect(() => {
+    if (!mapRef.current || !patrolLayerGroupRef.current) return;
+    if (showPatrol) {
+      if (!mapRef.current.hasLayer(patrolLayerGroupRef.current)) {
+        mapRef.current.addLayer(patrolLayerGroupRef.current);
+      }
+    } else {
+      if (mapRef.current.hasLayer(patrolLayerGroupRef.current)) {
+        mapRef.current.removeLayer(patrolLayerGroupRef.current);
+      }
+    }
+  }, [showPatrol]);
 
   const visibleMarkers = filter === "all" ? CRIME_MARKERS : CRIME_MARKERS.filter(m => m.severity === filter);
 
   return (
     <div className="flex flex-col h-[calc(100vh-80px)] gap-4">
       {/* Top Controls Bar */}
-      <div className="flex flex-wrap items-center gap-3 px-1 py-2 rounded-xl border border-line bg-white/80 backdrop-blur shadow-sm">
+      <div className="flex flex-wrap items-center gap-3 px-3 py-2 rounded-xl border border-line bg-white/80 backdrop-blur shadow-sm">
         <div className="flex items-center gap-2">
           <span className="text-xs font-semibold text-ink uppercase tracking-wide">Filter Severity:</span>
           {(["all", "critical", "high", "medium", "low"] as const).map((sev) => (
@@ -168,10 +189,12 @@ export default function LiveMap() {
                 <span className="capitalize">{sev}</span>
               </div>
             ))}
-            <div className="flex items-center gap-2 mt-2 border-t border-white/20 pt-2">
-              <span className="h-3 w-3 rounded-full inline-block bg-blue-500" />
-              <span>Patrol Unit</span>
-            </div>
+            {showPatrol && (
+              <div className="flex items-center gap-2 mt-2 border-t border-white/20 pt-2">
+                <span className="h-3 w-3 rounded-full inline-block bg-blue-500" />
+                <span>Patrol Unit</span>
+              </div>
+            )}
           </div>
         </div>
 

@@ -9,12 +9,29 @@ export interface TextToSpeechHook {
   isSupported: boolean;
 }
 
-// Convert Kannada unicode text to clean phonetic text if browser lacks native kn-IN voice
+// Convert acronyms & code IDs to smooth spoken words for natural TTS pronunciation
+function formatForSpeech(text: string): string {
+  return text
+    .replace(/KA-WF-2026-0417/gi, "K A Whitefield Case 4 1 7")
+    .replace(/KA-WF-2026-0428/gi, "K A Whitefield Case 4 2 8")
+    .replace(/KA-WF-2026-0398/gi, "K A Whitefield Case 3 9 8")
+    .replace(/KA-KR-2026-0112/gi, "K A K R Puram Case 1 1 2")
+    .replace(/KA-MP-2026-0089/gi, "K A Mahadevapura Case 0 8 9")
+    .replace(/BNS/g, "B.N.S.")
+    .replace(/IPC/g, "I.P.C.")
+    .replace(/SHO/g, "S.H.O.")
+    .replace(/IO/g, "I.O.")
+    .replace(/DSP/g, "D.S.P.")
+    .replace(/SHA-256/gi, "S H A 2 5 6")
+    .replace(/Z-score/gi, "Z score");
+}
+
+// Complete Kannada to phonetic transliteration for seamless speech on devices lacking native kn-IN voice pack
 function transliterateKannada(text: string): string {
   if (!/[\u0C80-\u0CFF]/.test(text)) return text;
 
   return text
-    .replace(/ದೃಷ್ಟಿ ಎಐ ವ್ಯವಸ್ಥೆ ಸಿದ್ಧವಾಗಿದೆ/g, "Drishti AI vyavasthe siddhavagide")
+    .replace(/ದೃಷ್ಟಿ ಎಐ ವ್ಯವಸ್ಥೆ ಸಿದ್ಧವಾಗಿದೆ/g, "Drishti A I vyavashthe siddhavagide")
     .replace(/ನಮಸ್ಕಾರ ಅಧಿಕಾರಿಯವರೇ/g, "Namaskara adhikariyavare")
     .replace(/ಇಂದಿನ ತನಿಖೆಗೆ ನಾನು ಹೇಗೆ ಸಹಾಯ ಮಾಡಲಿ/g, "indina tanikhege naanu hege sahaaya maadali")
     .replace(/ಗ್ರಾಫ್ ವಿಶ್ಲೇಷಣೆ ಫಲಿತಾಂಶ/g, "Graph vishleshane phalithaamsha")
@@ -37,7 +54,14 @@ function transliterateKannada(text: string): string {
     .replace(/ಪರಿಶೀಲನೆಗೆ/g, "parisheelanege")
     .replace(/ಕಳುಹಿಸಲಾಗಿದೆ/g, "kaluhisalaagide")
     .replace(/ತಡೆಯಲಾಗಿದೆ/g, "thadeyalaagide")
-    .replace(/ಅಧಿಕಾರವಿರುವುದಿಲ್ಲ/g, "adhikaaraviruvudilla");
+    .replace(/ಅಧಿಕಾರವಿರುವುದಿಲ್ಲ/g, "adhikaaraviruvudilla")
+    .replace(/ವೈಟ್‌ಫೀಲ್ಡ್/g, "Whitefield")
+    .replace(/ಠಾಣೆ/g, "thaane")
+    .replace(/ಇನ್‌ಸ್ಪೆಕ್ಟರ್/g, "Inspector")
+    .replace(/ವರದಿಯನ್ನು/g, "varadiyannu")
+    .replace(/ಸೂಚನೆ/g, "soochane")
+    .replace(/ಸಂಪೂರ್ಣ/g, "sampoorna")
+    .replace(/ವಿವರಗಳನ್ನು/g, "vivaragalannu");
 }
 
 export function useTextToSpeech(): TextToSpeechHook {
@@ -47,7 +71,7 @@ export function useTextToSpeech(): TextToSpeechHook {
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
 
-  // Load voices asynchronously & handle onvoiceschanged
+  // Load voices asynchronously & handle onvoiceschanged across all browsers
   useEffect(() => {
     if (!("speechSynthesis" in window)) {
       setIsSupported(false);
@@ -55,9 +79,13 @@ export function useTextToSpeech(): TextToSpeechHook {
     }
 
     const updateVoices = () => {
-      const availableVoices = window.speechSynthesis.getVoices();
-      if (availableVoices && availableVoices.length > 0) {
-        setVoices(availableVoices);
+      try {
+        const availableVoices = window.speechSynthesis.getVoices();
+        if (availableVoices && availableVoices.length > 0) {
+          setVoices(availableVoices);
+        }
+      } catch (e) {
+        console.warn("Could not retrieve speechSynthesis voices:", e);
       }
     };
 
@@ -70,7 +98,11 @@ export function useTextToSpeech(): TextToSpeechHook {
 
   const stop = useCallback(() => {
     if ("speechSynthesis" in window) {
-      window.speechSynthesis.cancel();
+      try {
+        window.speechSynthesis.cancel();
+      } catch (e) {
+        console.warn("Error stopping speech synthesis:", e);
+      }
     }
     setSpeaking(false);
   }, []);
@@ -83,7 +115,11 @@ export function useTextToSpeech(): TextToSpeechHook {
 
       // Ensure browser speechSynthesis is unpaused
       if (window.speechSynthesis.paused) {
-        window.speechSynthesis.resume();
+        try {
+          window.speechSynthesis.resume();
+        } catch (e) {
+          console.warn("Speech synthesis resume failed:", e);
+        }
       }
 
       const hasKannadaScript = /[\u0C80-\u0CFF]/.test(text) || forceLang === "kn";
@@ -91,9 +127,12 @@ export function useTextToSpeech(): TextToSpeechHook {
       // Get current voices list
       const currentVoices = voices.length > 0 ? voices : window.speechSynthesis.getVoices();
 
-      // Find native Kannada voice
+      // Find native Kannada voice (kn-IN)
       const exactKnVoice = currentVoices.find(
-        (v) => v.lang.toLowerCase().includes("kn") || v.name.toLowerCase().includes("kannada")
+        (v) =>
+          v.lang.toLowerCase().includes("kn") ||
+          v.name.toLowerCase().includes("kannada") ||
+          v.lang.toLowerCase().startsWith("kn")
       );
 
       // Find Indian accent voice (hi-IN, ta-IN, te-IN, en-IN) as secondary fallback
@@ -104,7 +143,7 @@ export function useTextToSpeech(): TextToSpeechHook {
       // Preferred English Voice fallback
       const defaultEnVoice = currentVoices.find((v) => v.lang.startsWith("en"));
 
-      let speechText = text;
+      let speechText = formatForSpeech(text);
       let targetLang = "en-IN";
       let chosenVoice: SpeechSynthesisVoice | undefined = undefined;
 
@@ -115,7 +154,7 @@ export function useTextToSpeech(): TextToSpeechHook {
           chosenVoice = exactKnVoice;
           speechText = text;
         } else if (indianVoice) {
-          // Device lacks native Kannada voice — use Indian voice + transliterated text for clear Kannada audio!
+          // Device lacks native Kannada voice — use Indian accent voice + transliterated text for clear audio!
           targetLang = indianVoice.lang || "en-IN";
           chosenVoice = indianVoice;
           speechText = transliterateKannada(text);
@@ -155,7 +194,7 @@ export function useTextToSpeech(): TextToSpeechHook {
         utterance.voice = chosenVoice;
       }
 
-      utterance.rate = 0.95; // Slightly clearer rate for public speaking
+      utterance.rate = 0.92; // Natural, clear speaking speed
       utterance.pitch = 1.0;
       utterance.volume = 1.0;
 
